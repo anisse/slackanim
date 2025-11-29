@@ -15,3 +15,8 @@ As of 2025-11-22, the repo containing the data is [private](https://github.com/g
  - [ffmpeg](https://www.ffmpeg.org/)
  - [gifski](https://github.com/ImageOptim/gifski), but [using my fork](https://github.com/anisse/gifski).
  - jq, curl, and other small tools.
+
+# Preview
+
+The pack contains 714 gifs. Here is a small preview:
+![Pack preview](./assets/preview.gif)
