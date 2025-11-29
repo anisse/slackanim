@@ -20,3 +20,15 @@ As of 2025-11-22, the repo containing the data is [private](https://github.com/g
 
 The pack contains 714 gifs. Here is a small preview:
 ![Pack preview](./assets/preview.gif)
+
+# Import into Slack
+
+You can import them one by one, or use [emojme](https://github.com/jackellenberger/emojme) to import them:
+```sh
+# Get slack token with the following code in the browser slack js console: JSON.parse(localStorage.localConfig_v2).teams[document.location.pathname.match(/^\/client\/([TE][A-Z0-9]+)/)[1]].token
+# Get the slack cookie by going into devtools and getting the "d" cookie
+#
+# Import all emojis. They will all have an anim- prefix to prevent collisions
+npx emojme upload --subdomain <your slack subdomain-> -token <slack token starting with xoxc-> --cookie <slack cookie starting with xoxd-> --src emoji.json
+# Import aliases. They will also have the anim- prefix
+npx emojme upload --subdomain <your slack subdomain> --token <slack token starting with xoxc-> --cookie <slack cookie starting with xoxd-> --src aliases.json
