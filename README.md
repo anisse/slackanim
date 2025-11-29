@@ -4,7 +4,7 @@ This is a workspace of scripts to convert [Noto Animated Emoji](https://googlefo
 
 # Download
 
-[Download the pack here](TODO).
+[Download the pack here](https://github.com/anisse/slackanim/releases/download/v0.0.1/slackanim-v0.0.1.zip).
 
 # Behind the scenes
 
