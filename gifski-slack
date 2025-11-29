@@ -1,0 +1,69 @@
+#!/bin/bash
+
+set -euo pipefail
+
+set -x
+
+INPUT="$1"
+
+TARGET_SIZE=130278 # Not the real value, but I'm too lazy to really test the slack limits
+
+_target_fps_option() {
+    local VIDEO="$1"
+    local LIMIT=175 # Maximum number of allowed frames
+    local FRAMES
+    FRAMES="$(ffprobe -v error -select_streams v:0 -count_frames -show_entries stream=nb_read_frames -of csv=p=0 "$VIDEO")"
+    DUR_MS="$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$VIDEO" | awk '{print $1 * 1000}')"
+    # If the number of frames exceeds the limit, calculate the target frame rate
+    if (( FRAMES > LIMIT )); then
+        echo --fps=$((LIMIT *1000 / DUR_MS))
+    fi
+}
+
+
+TMPOUT=$(mktemp gifski-slack.XXXXXXX)
+
+trap 'rm -f -- "$TMPOUT"' EXIT
+
+fps_opt="$(_target_fps_option "$INPUT")"
+
+for DIMENSION in 128 96 64 48 32
+do
+	QUALITY=1
+	MIN=1
+	MAX=101
+	while true
+	do
+		echo "Trying ${DIMENSION}x$DIMENSION at quality = $QUALITY..."
+		# shellcheck disable=SC2086
+		gifski --extra --quiet $fps_opt --width "$DIMENSION" --height "$DIMENSION" --quality "$QUALITY" --output "$TMPOUT" "$INPUT"
+		SIZE=$(stat -c %s "$TMPOUT")
+		if [ "$SIZE" -gt "$TARGET_SIZE" ]; then
+			if [ "$QUALITY" = 1 ]; then
+				# We cannot do it at this size, try the next
+				continue 2
+			fi
+			MAX="$QUALITY"
+		fi
+		if [ "$SIZE" -lt "$TARGET_SIZE" ]; then
+			MIN="$QUALITY"
+		fi
+		if [ "$SIZE" -eq "$TARGET_SIZE" ] || [[ "$SIZE" -lt "$TARGET_SIZE" && $((MAX-MIN)) = 1 ]]; then
+			break 2
+		fi
+		if [ "$QUALITY" = 1 ] && [ "$SIZE" -lt "$TARGET_SIZE" ]; then
+			# explore the max directly for better dichotomy
+			QUALITY=100
+			continue
+		fi
+		QUALITY=$((MIN + (MAX-MIN) / 2 ))
+	done
+	echo "Target size cannot be reached even with minimum quality. Sorry"
+done
+
+INPUT_FILE="${INPUT##*/}"
+OUTPUT="${INPUT_FILE%.*}.gif"
+if [ "$INPUT" -ef "$OUTPUT" ]; then
+	OUTPUT="${INPUT_FILE%.*}-gifslack.gif"
+fi
+mv "$TMPOUT" "$OUTPUT"
